@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 dialoguer = "0.7.1"
+rand = "0.8.0"
