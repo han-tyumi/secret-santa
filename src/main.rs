@@ -3,6 +3,7 @@ use std::{
     iter::FromIterator,
 };
 
+use clap::{App, Arg};
 use dialoguer::{Confirm, Input, MultiSelect};
 
 use rand::{self, Rng};
@@ -29,43 +30,61 @@ impl<T> RemoveRandom for Vec<T> {
 fn main() {
     let mut rng = rand::thread_rng();
 
-    let names = Input::new()
-        .with_prompt("Enter names separated by commas")
-        .validate_with(|input: &String| {
-            if input.contains(",") {
-                Ok(())
-            } else {
-                Err("at least two names are required")
-            }
-        })
-        .interact_text()
-        .unwrap();
+    let matches = App::new("Secret Santa")
+        .version("0.1.0")
+        .author("Matt Champagne <mmchamp95@gmail.com>")
+        .about("Sets up Secret Santa.")
+        .arg(
+            Arg::with_name("")
+                .multiple(true)
+                .takes_value(true)
+                .min_values(2),
+        )
+        .get_matches();
 
-    let names: HashSet<_> = names
-        .split(",")
-        .filter_map(|name| {
-            let name = name.trim();
-            if name.is_empty() {
-                None
-            } else {
-                Some(name)
-            }
-        })
-        .collect();
+    let names: HashSet<_> = match matches.values_of("") {
+        Some(names) => names.map(str::to_owned).collect(),
+        None => {
+            let names = Input::new()
+                .with_prompt("Enter names separated by commas")
+                .validate_with(|input: &String| {
+                    if input.contains(',') {
+                        Ok(())
+                    } else {
+                        Err("at least two names are required")
+                    }
+                })
+                .interact_text()
+                .unwrap();
+
+            names
+                .split(',')
+                .filter_map(|name| {
+                    let name = name.trim();
+                    if name.is_empty() {
+                        None
+                    } else {
+                        Some(name)
+                    }
+                })
+                .map(str::to_owned)
+                .collect()
+        }
+    };
 
     let mut pre_check = HashMap::new();
     let mut selections = HashMap::new();
     let mut order = HashMap::new();
-    let mut next_pick: (usize, HashSet<&str>) = (usize::MAX, HashSet::new());
+    let mut next_pick: (usize, HashSet<String>) = (usize::MAX, HashSet::new());
 
     println!();
 
     for name in &names {
-        let pre_checked = pre_check.entry(*name).or_insert(HashSet::new());
+        let pre_checked = pre_check.entry(name.clone()).or_insert(HashSet::new());
 
         let items: Vec<_> = names
             .iter()
-            .copied()
+            .cloned()
             .filter_map(|n| {
                 if n == *name {
                     None
@@ -82,25 +101,27 @@ fn main() {
             .items_checked(&items)
             .interact()
             .unwrap();
-        let selected: HashSet<_> = selected.iter().map(|i| items[*i].0).collect();
+        let selected: HashSet<_> = selected.iter().map(|i| items[*i].0.clone()).collect();
 
         for selected_name in &selected {
-            let pre_select_names = pre_check.entry(*selected_name).or_insert(HashSet::new());
-            pre_select_names.insert(*name);
+            let pre_select_names = pre_check
+                .entry(selected_name.clone())
+                .or_insert(HashSet::new());
+            pre_select_names.insert(name.clone());
         }
 
         let mut order_key = BinaryHeap::new();
         let selections_for_name: HashSet<_> = items
             .iter()
-            .copied()
+            .cloned()
             .filter_map(|item| {
                 let (name, ..) = item;
 
-                if selected.contains(name) {
+                if selected.contains(&name) {
                     None
                 } else {
-                    order_key.push(name);
-                    Some(name)
+                    order_key.push(name.clone());
+                    Some(name.clone())
                 }
             })
             .collect();
@@ -109,7 +130,7 @@ fn main() {
         let num_names = selections_for_name.len();
 
         let orders = order.entry(order_key).or_insert(HashSet::new());
-        orders.insert(*name);
+        orders.insert(name.clone());
 
         if (num_names < next_pick.0)
             || (num_names == next_pick.0 && orders.len() >= next_pick.1.len())
@@ -117,7 +138,7 @@ fn main() {
             next_pick = (num_names, orders.clone());
         }
 
-        selections.insert(*name, selections_for_name);
+        selections.insert(name.clone(), selections_for_name);
     }
 
     println!();
@@ -133,27 +154,27 @@ fn main() {
             order.clear();
 
             for name in names {
-                let picks = curr_selections.remove(name).unwrap();
+                let picks = curr_selections.remove(&name).unwrap();
                 let picks = Vec::from_iter(picks);
 
                 let index = rng.gen_range(0..picks.len());
-                let pick = picks[index];
+                let pick = picks[index].clone();
 
-                result.insert(name, pick);
+                result.insert(name, pick.clone());
 
                 if curr_selections.is_empty() {
                     break;
                 }
 
                 for (name, picks) in &mut curr_selections {
-                    picks.remove(pick);
+                    picks.remove(&pick);
 
-                    let order_key: BinaryHeap<_> = picks.iter().copied().collect();
+                    let order_key: BinaryHeap<_> = picks.clone().into_iter().collect();
                     let num_names = order_key.len();
                     let order_key = order_key.into_sorted_vec().join("");
 
                     let orders = order.entry(order_key).or_insert(HashSet::new());
-                    orders.insert(*name);
+                    orders.insert(name.clone());
 
                     if (num_names < next_pick.0)
                         || (num_names == next_pick.0 && orders.len() >= next_pick.1.len())
