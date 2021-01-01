@@ -6,15 +6,13 @@ use secret_santa::Santa;
 
 fn main() {
     let matches = App::new("Secret Santa")
-        .version("0.1.0")
-        .author("Matt Champagne <mmchamp95@gmail.com>")
-        .about("Sets up Secret Santa.")
         .arg(
             Arg::with_name("names")
                 .multiple(true)
                 .takes_value(true)
                 .min_values(2),
         )
+        .arg(Arg::with_name("exceptions").long("exceptions").short("E"))
         .get_matches();
 
     let (names, mut exceptions): (Vec<_>, HashMap<_, _>) = match matches.values_of("names") {
@@ -74,8 +72,13 @@ fn main() {
         }
     };
 
-    if exceptions.len() <= 0 {
-        let mut pre_check = HashMap::new();
+    let exceptions_len = exceptions.len();
+    if matches.is_present("exceptions") || exceptions_len <= 0 {
+        let mut pre_check = if exceptions_len > 0 {
+            exceptions.clone()
+        } else {
+            HashMap::new()
+        };
 
         println!();
 
