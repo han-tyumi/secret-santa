@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs};
 
 use clap::{App, Arg};
 use dialoguer::{Confirm, Input, MultiSelect};
@@ -24,6 +24,13 @@ fn main() {
                 .long("print")
                 .short("P")
                 .help("Print results to stdout"),
+        )
+        .arg(
+            Arg::with_name("directory")
+                .long("directory")
+                .short("D")
+                .takes_value(true)
+                .help("Save results to named files in the specified directory"),
         )
         .get_matches();
 
@@ -142,11 +149,11 @@ fn main() {
     }
 
     let santa_matcher = santa.matcher().unwrap();
+    let mut result = santa_matcher.generate().unwrap();
 
     if matches.is_present("print") {
         loop {
             println!();
-            let result = santa_matcher.generate().unwrap();
             println!("{:#?}", result);
 
             if !Confirm::new()
@@ -156,6 +163,16 @@ fn main() {
             {
                 break;
             }
+
+            result = santa_matcher.generate().unwrap();
+        }
+    }
+
+    if let Some(directory) = matches.value_of("directory") {
+        fs::create_dir_all(directory).unwrap();
+
+        for (santa, child) in result {
+            fs::write(format!("{}/{}.txt", directory, santa), child.as_bytes()).unwrap();
         }
     }
 }
