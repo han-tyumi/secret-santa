@@ -28,6 +28,7 @@ fn main() {
             let mut exceptions = HashMap::new();
 
             for value in &values {
+                // TODO: allow ':' or '='
                 let values: Vec<_> = value.split('=').collect();
 
                 if values.len() != 2 {
@@ -39,6 +40,7 @@ fn main() {
 
                 names.push(name.clone());
 
+                // TODO: allow quotes w/ spaces or commas between names or just commas
                 let exceptions_for_name: Vec<_> = values[1].split(',').map(str::to_owned).collect();
 
                 if exceptions_for_name.len() > 0 {
@@ -119,8 +121,6 @@ fn main() {
 
             exceptions.insert(name.clone(), selected);
         }
-
-        println!();
     }
 
     let mut santa = Santa::new();
@@ -138,6 +138,7 @@ fn main() {
     let santa_matcher = santa.matcher().unwrap();
 
     loop {
+        println!();
         let result = santa_matcher.generate().unwrap();
         println!("Result:\n{:#?}", result);
 
