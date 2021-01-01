@@ -10,14 +10,14 @@ fn main() {
         .author("Matt Champagne <mmchamp95@gmail.com>")
         .about("Sets up Secret Santa.")
         .arg(
-            Arg::with_name("")
+            Arg::with_name("names")
                 .multiple(true)
                 .takes_value(true)
                 .min_values(2),
         )
         .get_matches();
 
-    let names: Vec<_> = match matches.values_of("") {
+    let names: Vec<_> = match matches.values_of("names") {
         Some(names) => names.map(str::to_owned).collect(),
         None => {
             let names = Input::new()
