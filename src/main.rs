@@ -19,6 +19,12 @@ fn main() {
                 .short("E")
                 .help("Always show the name exceptions prompt"),
         )
+        .arg(
+            Arg::with_name("print")
+                .long("print")
+                .short("P")
+                .help("Print results to stdout"),
+        )
         .get_matches();
 
     let (names, mut exceptions): (Vec<_>, HashMap<_, _>) = match matches.values_of("names") {
@@ -137,17 +143,19 @@ fn main() {
 
     let santa_matcher = santa.matcher().unwrap();
 
-    loop {
-        println!();
-        let result = santa_matcher.generate().unwrap();
-        println!("Result:\n{:#?}", result);
+    if matches.is_present("print") {
+        loop {
+            println!();
+            let result = santa_matcher.generate().unwrap();
+            println!("{:#?}", result);
 
-        if !Confirm::new()
-            .with_prompt("Regenerate?")
-            .interact()
-            .unwrap()
-        {
-            break;
+            if !Confirm::new()
+                .with_prompt("Regenerate?")
+                .interact()
+                .unwrap()
+            {
+                break;
+            }
         }
     }
 }
