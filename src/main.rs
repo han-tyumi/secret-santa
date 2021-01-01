@@ -10,9 +10,15 @@ fn main() {
             Arg::with_name("names")
                 .multiple(true)
                 .takes_value(true)
-                .min_values(2),
+                .min_values(2)
+                .help("Names of the people participating in this secret santa"),
         )
-        .arg(Arg::with_name("exceptions").long("exceptions").short("E"))
+        .arg(
+            Arg::with_name("exceptions")
+                .long("exceptions")
+                .short("E")
+                .help("Always show the name exceptions prompt"),
+        )
         .get_matches();
 
     let (names, mut exceptions): (Vec<_>, HashMap<_, _>) = match matches.values_of("names") {
