@@ -113,7 +113,7 @@ impl Santa {
 
 impl SantaMatcher {
     /// Generates a secret santa mapping.
-    pub fn generate(&self) -> HashMap<String, String> {
+    pub fn generate(&self) -> Result<HashMap<String, String>, String> {
         let SantaMatcher { santa } = self;
         let mut result = HashMap::new();
         let mut selections = santa.selections.clone();
@@ -128,6 +128,11 @@ impl SantaMatcher {
 
             for name in names {
                 let picks = selections.remove(&name).unwrap();
+
+                if picks.len() <= 0 {
+                    return Err(format!("no more picks for {}", name));
+                }
+
                 let picks = Vec::from_iter(picks);
 
                 let index = rng.gen_range(0..picks.len());
@@ -162,6 +167,6 @@ impl SantaMatcher {
             }
         }
 
-        result
+        Ok(result)
     }
 }

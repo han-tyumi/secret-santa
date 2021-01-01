@@ -101,7 +101,7 @@ fn main() {
     let santa_matcher = santa.matcher().unwrap();
 
     loop {
-        let result = santa_matcher.generate();
+        let result = santa_matcher.generate().unwrap();
         println!("Result:\n{:#?}", result);
 
         if !Confirm::new()
