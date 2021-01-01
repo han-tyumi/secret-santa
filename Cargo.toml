@@ -4,6 +4,7 @@ description = "Generates Secret Santa mappings."
 version = "0.1.0"
 authors = ["han-tyumi <mmchamp95@gmail.com>"]
 edition = "2018"
+license = "GPL-3.0-or-later"
 homepage = "https://github.com/han-tyumi/secret-santa"
 repository = "https://github.com/han-tyumi/secret-santa"
 readme = "README.md"
