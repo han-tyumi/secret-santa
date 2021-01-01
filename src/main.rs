@@ -17,8 +17,33 @@ fn main() {
         )
         .get_matches();
 
-    let names: Vec<_> = match matches.values_of("names") {
-        Some(names) => names.map(str::to_owned).collect(),
+    let (names, mut exceptions): (Vec<_>, HashMap<_, _>) = match matches.values_of("names") {
+        Some(names) => {
+            let values: Vec<_> = names.map(str::to_owned).collect();
+            let mut names = vec![];
+            let mut exceptions = HashMap::new();
+
+            for value in &values {
+                let values: Vec<_> = value.split('=').collect();
+
+                if values.len() != 2 {
+                    names.push(value.to_owned());
+                    continue;
+                }
+
+                let name = values[0].to_owned();
+
+                names.push(name.clone());
+
+                let exceptions_for_name: Vec<_> = values[1].split(',').map(str::to_owned).collect();
+
+                if exceptions_for_name.len() > 0 {
+                    exceptions.insert(name, exceptions_for_name);
+                }
+            }
+
+            (names, exceptions)
+        }
         None => {
             let names = Input::new()
                 .with_prompt("Enter names separated by commas")
@@ -32,7 +57,7 @@ fn main() {
                 .interact_text()
                 .unwrap();
 
-            names
+            let names = names
                 .split(',')
                 .filter_map(|name| {
                     let name = name.trim();
@@ -43,48 +68,51 @@ fn main() {
                     }
                 })
                 .map(str::to_owned)
-                .collect()
+                .collect();
+
+            (names, HashMap::new())
         }
     };
 
-    let mut exceptions = HashMap::new();
-    let mut pre_check = HashMap::new();
+    if exceptions.len() <= 0 {
+        let mut pre_check = HashMap::new();
 
-    println!();
+        println!();
 
-    for name in &names {
-        let pre_checked = pre_check.entry(name.clone()).or_insert(vec![]);
+        for name in &names {
+            let pre_checked = pre_check.entry(name.clone()).or_insert(vec![]);
 
-        let items: Vec<_> = names
-            .iter()
-            .cloned()
-            .filter_map(|n| {
-                if n == *name {
-                    None
-                } else if pre_checked.contains(&n) {
-                    Some((n, true))
-                } else {
-                    Some((n, false))
-                }
-            })
-            .collect();
+            let items: Vec<_> = names
+                .iter()
+                .cloned()
+                .filter_map(|n| {
+                    if n == *name {
+                        None
+                    } else if pre_checked.contains(&n) {
+                        Some((n, true))
+                    } else {
+                        Some((n, false))
+                    }
+                })
+                .collect();
 
-        let selected = MultiSelect::new()
-            .with_prompt(format!("Exclusions for {}", name))
-            .items_checked(&items)
-            .interact()
-            .unwrap();
-        let selected: Vec<_> = selected.iter().map(|i| items[*i].0.clone()).collect();
+            let selected = MultiSelect::new()
+                .with_prompt(format!("Exclusions for {}", name))
+                .items_checked(&items)
+                .interact()
+                .unwrap();
+            let selected: Vec<_> = selected.iter().map(|i| items[*i].0.clone()).collect();
 
-        for selected_name in &selected {
-            let pre_select_names = pre_check.entry(selected_name.clone()).or_insert(vec![]);
-            pre_select_names.push(name.clone());
+            for selected_name in &selected {
+                let pre_select_names = pre_check.entry(selected_name.clone()).or_insert(vec![]);
+                pre_select_names.push(name.clone());
+            }
+
+            exceptions.insert(name.clone(), selected);
         }
 
-        exceptions.insert(name.clone(), selected);
+        println!();
     }
-
-    println!();
 
     let mut santa = Santa::new();
 
