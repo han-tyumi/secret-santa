@@ -98,7 +98,7 @@ fn main() {
         santa.add_name_with_exceptions(name.as_str(), exceptions);
     }
 
-    let santa_matcher = santa.matcher();
+    let santa_matcher = santa.matcher().unwrap();
 
     loop {
         let result = santa_matcher.generate();

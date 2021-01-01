@@ -59,9 +59,10 @@ impl Santa {
     }
 
     /// Creates a matcher that can be used to generate secret santa mappings using the currently set names and exceptions.
-    pub fn matcher(mut self) -> SantaMatcher {
+    pub fn matcher(mut self) -> Result<SantaMatcher, String> {
         self.update_selections();
-        SantaMatcher { santa: self }
+        self.validate()?;
+        Ok(SantaMatcher { santa: self })
     }
 
     fn update_selections(&mut self) {
@@ -97,6 +98,16 @@ impl Santa {
                 self.next = (selections_len, names.clone());
             }
         }
+    }
+
+    fn validate(&self) -> Result<(), String> {
+        for (name, selections) in &self.selections {
+            if selections.len() <= 0 {
+                return Err(format!("no selections for {}", name));
+            }
+        }
+
+        Ok(())
     }
 }
 
